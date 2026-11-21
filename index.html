@@ -257,6 +257,12 @@
       .brand-sub { display: none; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
 </head>
 <body>
   <header class="navbar">
@@ -324,7 +330,7 @@
         <label>Bản vẽ Ảnh (PNG/JPG/WEBP) & Tài liệu PDF gốc *</label>
         <div class="dropzone" id="postDropzone">
           <b>+ Kéo thả nhiều file Ảnh hoặc PDF vào đây (hoặc bấm để chọn)</b>
-          <div style="font-size:12px; color:var(--muted); margin-top:4px;">Không nén, không giảm độ phân giải • Tối đa 25MB/file để đồng bộ Cloud ổn định</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:4px;">Không nén, không giảm độ phân giải • Tối đa 200MB/file để đồng bộ Cloud ổn định</div>
           <input type="file" id="inFiles" accept="image/*,application/pdf" multiple style="display:none;" />
         </div>
       </div>
@@ -383,17 +389,29 @@
     <div class="ov-stage" id="lbStage"><img id="lbImg" alt="Zoom" /></div>
   </div>
 
-  <!-- Trình Xem PDF Trực Tiếp -->
+  <!-- Trình Xem PDF Trực Tiếp (Hỗ trợ Zoom & Đọc từng trang siêu nét) -->
   <div class="overlay-viewer" id="pdfViewer">
-    <div class="ov-bar">
-      <div style="font-weight:700; font-size:13px;" id="pdfTitle"></div>
-      <div style="display:flex; gap:8px;">
+    <div class="ov-bar" style="flex-wrap:wrap;">
+      <div style="font-weight:700; font-size:13px; max-width:340px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="pdfTitle"></div>
+      <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;" id="pdfControls">
+        <button class="btn" id="pdfPrevPage">◀ Trang trước</button>
+        <span id="pdfPageInfo" style="font-family:var(--mono); font-size:12px; padding:0 6px;">Trang 1 / 1</span>
+        <button class="btn" id="pdfNextPage">Trang sau ▶</button>
+        <button class="btn" id="pdfZoomOut">−</button>
+        <span id="pdfZoomPct" style="font-family:var(--mono); font-size:12px; min-width:44px; text-align:center;">120%</span>
+        <button class="btn" id="pdfZoomIn">+</button>
+        <button class="btn" id="pdfToggleMode" title="Chuyển giữa trình đọc tích hợp và trình đọc mặc định của trình duyệt">🔄 Đổi kiểu xem</button>
         <button class="btn" id="pdfNewTab">Mở tab mới ↗</button>
         <button class="btn-primary" id="pdfDownload">⬇ Tải PDF gốc</button>
         <button class="btn danger" id="pdfClose">✕ Đóng</button>
       </div>
     </div>
-    <div class="ov-stage" style="cursor:default;"><iframe id="pdfFrame"></iframe></div>
+    <div class="ov-stage" id="pdfStage" style="cursor:default; overflow:auto; align-items:flex-start; padding:20px; background:#14161a;">
+      <div id="pdfCanvasWrap" style="margin:auto; box-shadow:0 12px 40px rgba(0,0,0,0.7); background:#fff; display:flex; align-items:center; justify-content:center;">
+        <canvas id="pdfCanvas"></canvas>
+      </div>
+      <iframe id="pdfFrame" style="display:none; width:100%; height:100%; border:none;"></iframe>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -490,15 +508,25 @@
       const buf = new Uint8Array(await file.arrayBuffer());
       const totalChunks = Math.max(1, Math.ceil(buf.length / CHUNK_RAW_BYTES));
 
-      for (let i = 0; i < totalChunks; i++) {
-        const slice = buf.subarray(i * CHUNK_RAW_BYTES, (i + 1) * CHUNK_RAW_BYTES);
-        const b64 = uint8ToBase64(slice);
-        await setDoc(doc(db, 'file_chunks', `${fileId}_${i}`), {
-          fileId,
-          index: i,
-          data: b64
-        });
-        if (onProgress) onProgress((i + 1) / totalChunks);
+      let completed = 0;
+      const BATCH_SIZE = 4;
+      for (let i = 0; i < totalChunks; i += BATCH_SIZE) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + BATCH_SIZE, totalChunks); j++) {
+          const slice = buf.subarray(j * CHUNK_RAW_BYTES, (j + 1) * CHUNK_RAW_BYTES);
+          const b64 = uint8ToBase64(slice);
+          batch.push(
+            setDoc(doc(db, 'file_chunks', `${fileId}_${j}`), {
+              fileId,
+              index: j,
+              data: b64
+            }).then(() => {
+              completed++;
+              if (onProgress) onProgress(completed / totalChunks);
+            })
+          );
+        }
+        await Promise.all(batch);
       }
 
       const blob = new Blob([buf], { type: file.type });
@@ -509,12 +537,22 @@
 
     async function fetchLosslessFile(meta, onProgress) {
       if (state.fileCache.has(meta.fileId)) return state.fileCache.get(meta.fileId);
-      const parts = [];
-      for (let i = 0; i < meta.chunkCount; i++) {
-        const snap = await getDoc(doc(db, 'file_chunks', `${meta.fileId}_${i}`));
-        if (!snap.exists()) throw new Error('Thiếu mảnh dữ liệu ' + i);
-        parts.push(base64ToUint8(snap.data().data));
-        if (onProgress) onProgress((i + 1) / meta.chunkCount);
+      const parts = new Array(meta.chunkCount);
+      let completed = 0;
+      const BATCH_SIZE = 6;
+      for (let i = 0; i < meta.chunkCount; i += BATCH_SIZE) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + BATCH_SIZE, meta.chunkCount); j++) {
+          batch.push(
+            getDoc(doc(db, 'file_chunks', `${meta.fileId}_${j}`)).then(snap => {
+              if (!snap.exists()) throw new Error('Thiếu mảnh dữ liệu ' + j);
+              parts[j] = base64ToUint8(snap.data().data);
+              completed++;
+              if (onProgress) onProgress(completed / meta.chunkCount);
+            })
+          );
+        }
+        await Promise.all(batch);
       }
       const blob = new Blob(parts, { type: meta.type || 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
@@ -829,7 +867,7 @@
               <div class="sheet-card">
                 <div class="sheet-thumb" data-view-file="${idx}" id="thumb_${f.fileId}">
                   ${f.isPdf
-                    ? `<div class="pdf-cover-box"><div class="pdf-badge-lg">📄 PDF GỐC 100%</div><div style="font-size:12px; color:var(--muted);">Bấm để đọc trực tiếp</div></div>`
+                    ? `<div class="pdf-cover-box"><div class="pdf-badge-lg">📄 PDF GỐC 100%</div><div style="font-size:12px; color:var(--muted);">⏳ Đang dựng trang xem trước...</div></div>`
                     : `<div style="color:var(--muted); font-family:var(--mono); font-size:12px;">⏳ Đang tải bản xem trước gốc...</div>`
                   }
                 </div>
@@ -837,7 +875,7 @@
                   <div style="font-weight:700; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</div>
                   <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:11.5px; color:var(--muted);">
                     <span>${formatBytes(f.size)}</span>
-                    <span>${f.isPdf ? 'PDF DOCUMENT' : `${f.width || '?'} × ${f.height || '?'} px`}</span>
+                    <span>${f.isPdf ? (f.pageCount ? `PDF • ${f.pageCount} TRANG` : 'PDF GỐC') : `${f.width || '?'} × ${f.height || '?'} px`}</span>
                   </div>
                   <div style="display:flex; gap:6px; margin-top:4px;">
                     <button class="btn" style="flex:1; justify-content:center;" data-view-file="${idx}">${f.isPdf ? '👁️ Xem PDF' : '🔍 Soi nét 1000%'}</button>
@@ -889,16 +927,30 @@
         };
       }
 
-      // Nạp ảnh gốc tự động cho các thẻ ảnh
+      // Nạp bản xem trước gốc tự động cho cả Ảnh & PDF
       files.forEach(async f => {
-        if (f.isPdf) return;
         try {
           const entry = await fetchLosslessFile(f);
           const box = document.getElementById(`thumb_${f.fileId}`);
-          if (box) box.innerHTML = `<img src="${entry.url}" alt="${escapeHtml(f.name)}" />`;
+          if (!box) return;
+          if (!f.isPdf) {
+            box.innerHTML = `<img src="${entry.url}" alt="${escapeHtml(f.name)}" />`;
+          } else if (window.pdfjsLib) {
+            const buf = await entry.blob.arrayBuffer();
+            const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+            const page = await pdf.getPage(1);
+            const vp0 = page.getViewport({ scale: 1 });
+            const vp = page.getViewport({ scale: Math.min(1.5, 520 / vp0.width) });
+            const c = document.createElement('canvas');
+            c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+            await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+            box.innerHTML = `<img src="${c.toDataURL('image/jpeg', 0.85)}" alt="${escapeHtml(f.name)}" /><span class="tag-pill" style="position:absolute; top:8px; right:8px; background:var(--pdf); color:#111; font-weight:800;">PDF • ${pdf.numPages} trang</span>`;
+          } else {
+            box.innerHTML = `<div class="pdf-cover-box"><div class="pdf-badge-lg">📄 PDF GỐC 100%</div><div style="font-size:12px; color:var(--muted);">Bấm để mở đọc ngay</div></div>`;
+          }
         } catch(e) {
           const box = document.getElementById(`thumb_${f.fileId}`);
-          if (box) box.innerHTML = `<div style="color:var(--danger); font-size:12px;">Lỗi tải ảnh gốc</div>`;
+          if (box) box.innerHTML = `<div class="pdf-cover-box"><div class="pdf-badge-lg">${f.isPdf ? '📄 PDF GỐC' : '⚠️ LỖI TẢI'}</div><div style="font-size:12px; color:var(--muted);">Bấm để mở xem</div></div>`;
         }
       });
 
@@ -969,8 +1021,8 @@
     }
     function fitLb() {
       const m = state.activeMedia;
-      if (!m || !m.width) { state.lbScale = 1; state.lbX = 0; state.lbY = 0; return applyLbTransform(); }
-      state.lbScale = Math.min(1, (lbStage.clientWidth - 40) / m.width, (lbStage.clientHeight - 40) / m.height);
+      if (!m || !m.meta || !m.meta.width) { state.lbScale = 1; state.lbX = 0; state.lbY = 0; return applyLbTransform(); }
+      state.lbScale = Math.min(1, (lbStage.clientWidth - 40) / m.meta.width, (lbStage.clientHeight - 40) / m.meta.height);
       state.lbX = 0; state.lbY = 0;
       applyLbTransform();
     }
@@ -981,9 +1033,7 @@
       state.activeMedia = { meta, entry };
 
       if (meta.isPdf) {
-        document.getElementById('pdfTitle').textContent = `${meta.name} (${formatBytes(meta.size)})`;
-        pdfFrame.src = entry.url;
-        pdfViewer.classList.add('open');
+        await openPdfInteractive(meta, entry);
         return;
       }
 
@@ -1009,7 +1059,75 @@
     window.addEventListener('mousemove', e => { if (state.lbDrag) { state.lbX = e.clientX - state.lbSX; state.lbY = e.clientY - state.lbSY; applyLbTransform(); } });
     window.addEventListener('mouseup', () => { state.lbDrag = false; });
 
-    document.getElementById('pdfClose').onclick = () => { pdfViewer.classList.remove('open'); pdfFrame.src = ''; };
+    const pdfState = { doc: null, page: 1, scale: 1.2, nativeMode: false, renderTask: null };
+    const pdfCanvas = document.getElementById('pdfCanvas');
+    const pdfCanvasWrap = document.getElementById('pdfCanvasWrap');
+    const pdfStage = document.getElementById('pdfStage');
+
+    async function renderPdfPage() {
+      if (!pdfState.doc) return;
+      if (pdfState.renderTask) {
+        try { pdfState.renderTask.cancel(); } catch(e) {}
+      }
+      const page = await pdfState.doc.getPage(pdfState.page);
+      const dpr = window.devicePixelRatio || 1;
+      const vp = page.getViewport({ scale: pdfState.scale * dpr });
+      pdfCanvas.width = Math.round(vp.width);
+      pdfCanvas.height = Math.round(vp.height);
+      pdfCanvas.style.width = Math.round(vp.width / dpr) + 'px';
+      pdfCanvas.style.height = Math.round(vp.height / dpr) + 'px';
+      document.getElementById('pdfPageInfo').textContent = `Trang ${pdfState.page} / ${pdfState.doc.numPages}`;
+      document.getElementById('pdfZoomPct').textContent = Math.round(pdfState.scale * 100) + '%';
+      pdfState.renderTask = page.render({ canvasContext: pdfCanvas.getContext('2d'), viewport: vp });
+      await pdfState.renderTask.promise.catch(() => {});
+    }
+
+    async function openPdfInteractive(meta, entry) {
+      document.getElementById('pdfTitle').textContent = `${meta.name} (${formatBytes(meta.size)})`;
+      pdfViewer.classList.add('open');
+      pdfState.nativeMode = false;
+      pdfCanvasWrap.style.display = 'flex';
+      pdfFrame.style.display = 'none';
+      pdfFrame.src = entry.url;
+
+      if (window.pdfjsLib) {
+        try {
+          const buf = await entry.blob.arrayBuffer();
+          pdfState.doc = await window.pdfjsLib.getDocument({ data: buf }).promise;
+          pdfState.page = 1;
+          const firstPage = await pdfState.doc.getPage(1);
+          const vp0 = firstPage.getViewport({ scale: 1 });
+          pdfState.scale = Math.min(1.6, Math.max(0.7, (pdfStage.clientWidth - 60) / vp0.width));
+          await renderPdfPage();
+          return;
+        } catch (err) {
+          console.warn('Fallback to native PDF iframe:', err);
+        }
+      }
+      pdfState.nativeMode = true;
+      pdfCanvasWrap.style.display = 'none';
+      pdfFrame.style.display = 'block';
+    }
+
+    document.getElementById('pdfPrevPage').onclick = () => {
+      if (pdfState.doc && pdfState.page > 1) { pdfState.page--; pdfStage.scrollTop = 0; renderPdfPage(); }
+    };
+    document.getElementById('pdfNextPage').onclick = () => {
+      if (pdfState.doc && pdfState.page < pdfState.doc.numPages) { pdfState.page++; pdfStage.scrollTop = 0; renderPdfPage(); }
+    };
+    document.getElementById('pdfZoomIn').onclick = () => {
+      if (pdfState.doc) { pdfState.scale = Math.min(4.0, pdfState.scale + 0.25); renderPdfPage(); }
+    };
+    document.getElementById('pdfZoomOut').onclick = () => {
+      if (pdfState.doc) { pdfState.scale = Math.max(0.4, pdfState.scale - 0.25); renderPdfPage(); }
+    };
+    document.getElementById('pdfToggleMode').onclick = () => {
+      pdfState.nativeMode = !pdfState.nativeMode;
+      pdfCanvasWrap.style.display = pdfState.nativeMode ? 'none' : 'flex';
+      pdfFrame.style.display = pdfState.nativeMode ? 'block' : 'none';
+    };
+
+    document.getElementById('pdfClose').onclick = () => { pdfViewer.classList.remove('open'); pdfFrame.src = ''; pdfState.doc = null; };
     document.getElementById('pdfNewTab').onclick = () => { if (state.activeMedia) window.open(state.activeMedia.entry.url, '_blank'); };
     document.getElementById('pdfDownload').onclick = () => { if (state.activeMedia) downloadSingleFile(state.activeMedia.meta); };
 
@@ -1047,8 +1165,8 @@
         const isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
         const isImg = f.type.startsWith('image/');
         if (!isPdf && !isImg) continue;
-        if (f.size > 25 * 1024 * 1024) {
-          showToast(`Bỏ qua "${f.name}" vì vượt quá 25MB!`);
+        if (f.size > 200 * 1024 * 1024) {
+          showToast(`Bỏ qua "${f.name}" vì vượt quá 200MB!`);
           continue;
         }
         state.pendingFiles.push(f);
@@ -1084,6 +1202,27 @@
       });
     }
 
+    async function generatePdfThumbAndPages(file) {
+      try {
+        if (!window.pdfjsLib) return { pageCount: 0, coverThumb: null };
+        const buf = await file.arrayBuffer();
+        const pdf = await window.pdfjsLib.getDocument({ data: buf }).promise;
+        const page = await pdf.getPage(1);
+        const vp0 = page.getViewport({ scale: 1 });
+        const scale = Math.min(1.5, 640 / vp0.width);
+        const vp = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(vp.width);
+        canvas.height = Math.round(vp.height);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        const coverThumb = canvas.toDataURL('image/jpeg', 0.8);
+        return { pageCount: pdf.numPages, coverThumb };
+      } catch (e) {
+        console.warn('PDF thumb fallback:', e);
+        return { pageCount: 0, coverThumb: null };
+      }
+    }
+
     document.getElementById('btnOpenPost').onclick = () => {
       state.pendingFiles = [];
       renderPendingFiles();
@@ -1115,12 +1254,16 @@
         for (let i = 0; i < totalFiles; i++) {
           const f = state.pendingFiles[i];
           const isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
-          let width = 0, height = 0;
+          let width = 0, height = 0, pageCount = 0;
 
           if (!isPdf) {
             const info = await analyzeImageAndThumb(f);
             width = info.width; height = info.height;
             if (!coverThumb && info.coverThumb) coverThumb = info.coverThumb;
+          } else {
+            const pdfInfo = await generatePdfThumbAndPages(f);
+            pageCount = pdfInfo.pageCount;
+            if (!coverThumb && pdfInfo.coverThumb) coverThumb = pdfInfo.coverThumb;
           }
 
           const fileId = await uploadLosslessFile(f, p => {
@@ -1138,6 +1281,7 @@
             isPdf,
             width,
             height,
+            pageCount,
             chunkCount: Math.max(1, Math.ceil(f.size / CHUNK_RAW_BYTES))
           });
         }
