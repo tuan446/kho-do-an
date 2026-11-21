@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KHO ĐỒ ÁN — MXH Bản Vẽ & PDF Gốc 100%</title>
+  <style>
+    :root {
+      --bg: #101215;
+      --surface: #181b20;
+      --surface-2: #22262d;
+      --border: #2e333c;
+      --text: #eef0f3;
+      --muted: #949ba5;
+      --accent: #d99b43;
+      --accent-hover: #eab05c;
+      --danger: #e05d5d;
+      --success: #4caf7d;
+      --pdf: #e06c53;
+      --radius: 12px;
+      --mono: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+      --sans: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg); color: var(--text); font-family: var(--sans);
+      font-size: 14px; line-height: 1.5; min-height: 100vh;
+    }
+
+    /* Top Navbar */
+    .navbar {
+      position: sticky; top: 0; z-index: 40;
+      background: rgba(24, 27, 32, 0.92); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .brand-logo {
+      width: 32px; height: 32px; border-radius: 8px; background: var(--accent);
+      color: #111; font-weight: 900; display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-size: 15px;
+    }
+    .brand-title { font-weight: 800; font-size: 16px; letter-spacing: 0.05em; }
+    .brand-sub { font-size: 11px; color: var(--success); font-family: var(--mono); }
+
+    .nav-tabs { display: flex; gap: 6px; }
+    .nav-tab {
+      background: transparent; border: 1px solid transparent; color: var(--muted);
+      padding: 8px 14px; border-radius: 8px; font-weight: 600; font-size: 13px; cursor: pointer;
+    }
+    .nav-tab:hover { background: var(--surface-2); color: var(--text); }
+    .nav-tab.active { background: rgba(217,155,67,0.14); color: var(--accent); border-color: rgba(217,155,67,0.35); }
+
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .profile-pill {
+      display: flex; align-items: center; gap: 8px; background: var(--surface-2);
+      border: 1px solid var(--border); padding: 6px 12px; border-radius: 99px;
+      cursor: pointer; font-size: 12.5px; font-weight: 600;
+    }
+    .profile-pill:hover { border-color: var(--accent); }
+    .avatar-dot {
+      width: 24px; height: 24px; border-radius: 50%; display: inline-flex;
+      align-items: center; justify-content: center; font-weight: 800; font-size: 11px; color: #111;
+    }
+
+    /* Buttons & Inputs */
+    .btn-primary {
+      background: var(--accent); color: #111; border: none; border-radius: 8px;
+      padding: 9px 15px; font-weight: 700; font-size: 13px; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; transition: 0.15s;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn {
+      background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 7px 12px; font-weight: 600; font-size: 12.5px;
+      cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: 0.15s;
+    }
+    .btn:hover { border-color: #4f5764; background: #292e36; }
+    .btn.active { border-color: var(--accent); color: var(--accent); background: rgba(217,155,67,0.12); }
+    .btn.danger { color: #ff8585; border-color: rgba(224,93,93,0.35); }
+    .btn.danger:hover { background: rgba(224,93,93,0.16); }
+
+    .text-input, .select-input, .textarea-input {
+      background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      padding: 9px 12px; border-radius: 8px; font-size: 13px; outline: none; width: 100%; font-family: inherit;
+    }
+    .text-input:focus, .select-input:focus, .textarea-input:focus { border-color: var(--accent); }
+
+    /* Main Layout */
+    .container { max-width: 1180px; margin: 0 auto; padding: 22px 20px 60px; }
+
+    /* Filter Bar */
+    .filter-bar {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 20px; background: var(--surface);
+      border: 1px solid var(--border); padding: 12px 16px; border-radius: var(--radius);
+    }
+    .cat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      padding: 6px 12px; border-radius: 99px; font-size: 12.5px; font-weight: 600;
+      background: var(--bg); border: 1px solid var(--border); color: var(--muted); cursor: pointer;
+    }
+    .chip:hover { color: var(--text); }
+    .chip.active { background: var(--accent); color: #111; border-color: var(--accent); }
+
+    /* Feed Grid */
+    .feed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; }
+    .post-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; display: flex; flex-direction: column; transition: 0.18s;
+    }
+    .post-card:hover { border-color: #49505c; transform: translateY(-2px); }
+
+    .post-header {
+      padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .author-box { display: flex; align-items: center; gap: 10px; cursor: pointer; min-width: 0; }
+    .author-avatar {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-weight: 800; color: #111; font-size: 13px;
+    }
+    .author-meta { min-width: 0; }
+    .author-name { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .author-sub { font-size: 11.5px; color: var(--muted); font-family: var(--mono); }
+
+    .post-cover {
+      height: 225px; background: #0a0b0d; position: relative; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+    .post-cover img { width: 100%; height: 100%; object-fit: cover; transition: 0.25s; }
+    .post-cover:hover img { transform: scale(1.03); }
+    .pdf-cover-box {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+      color: var(--pdf); text-align: center; padding: 16px;
+    }
+    .pdf-badge-lg {
+      font-family: var(--mono); font-weight: 800; font-size: 16px; padding: 8px 16px;
+      border-radius: 8px; background: rgba(224,108,83,0.15); border: 1px solid rgba(224,108,83,0.4);
+    }
+    .cover-tags {
+      position: absolute; bottom: 10px; left: 10px; right: 10px;
+      display: flex; justify-content: space-between; align-items: center; pointer-events: none;
+    }
+    .tag-pill {
+      background: rgba(12, 14, 17, 0.85); color: #fff; font-family: var(--mono);
+      font-size: 11px; padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .post-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .post-title { font-size: 15px; font-weight: 700; cursor: pointer; line-height: 1.35; }
+    .post-title:hover { color: var(--accent); }
+    .post-desc {
+      font-size: 13px; color: var(--muted); display: -webkit-box;
+      -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+
+    .post-footer {
+      padding: 10px 14px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .social-actions { display: flex; gap: 6px; }
+    .like-btn.liked { color: #ff6b81; border-color: rgba(255,107,129,0.4); background: rgba(255,107,129,0.12); }
+
+    /* Detail View */
+    .detail-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; }
+    .detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+    .sheets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; margin-top: 18px; }
+    .sheet-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+    .sheet-thumb {
+      height: 220px; background: #07080a; display: flex; align-items: center; justify-content: center;
+      position: relative; cursor: pointer; overflow: hidden;
+    }
+    .sheet-thumb img { width: 100%; height: 100%; object-fit: contain; }
+    .sheet-meta { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+    /* Comments */
+    .comments-section { margin-top: 26px; padding-top: 20px; border-top: 1px solid var(--border); }
+    .comment-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.76); z-index: 60;
+      display: none; align-items: center; justify-content: center; padding: 16px; overflow-y: auto;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      width: 100%; max-width: 580px; padding: 22px; display: flex; flex-direction: column; gap: 14px;
+      max-height: 92vh; overflow-y: auto;
+    }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 700; color: var(--muted); }
+
+    .dropzone {
+      border: 2px dashed var(--border); border-radius: 10px; padding: 22px; text-align: center;
+      cursor: pointer; background: rgba(255,255,255,0.015); transition: 0.15s;
+    }
+    .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: rgba(217,155,67,0.07); }
+    .pending-list { display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
+    .pending-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      background: var(--bg); border: 1px solid var(--border); padding: 7px 10px; border-radius: 7px; font-size: 12.5px;
+    }
+
+    /* Progress Bar */
+    .progress-wrap { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+    .progress-bar { height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+    .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.2s; }
+
+    /* Deep Zoom Lightbox & PDF Viewer */
+    .overlay-viewer {
+      position: fixed; inset: 0; background: #07080a; z-index: 100; display: none; flex-direction: column;
+    }
+    .overlay-viewer.open { display: flex; }
+    .ov-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 10px 18px; background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .ov-stage { flex: 1; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: grab; user-select: none; }
+    .ov-stage:active { cursor: grabbing; }
+    .ov-stage img { max-width: none; max-height: none; pointer-events: none; will-change: transform; }
+    .ov-stage iframe { width: 100%; height: 100%; border: none; background: #222; }
+
+    /* Drive Toolkit */
+    .tool-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+    .tool-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .bookmarklet-btn {
+      display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #111;
+      font-weight: 800; padding: 11px 16px; border-radius: 8px; text-decoration: none;
+      border: 2px dashed #111; align-self: flex-start; cursor: grab;
+    }
+    .code-box {
+      background: #0a0b0d; border: 1px solid var(--border); border-radius: 8px; padding: 10px;
+      font-family: var(--mono); font-size: 11.5px; color: #c9d1d9; max-height: 150px; overflow: auto;
+    }
+
+    .toast {
+      position: fixed; bottom: 20px; right: 20px; background: var(--surface-2);
+      border: 1px solid var(--accent); color: var(--text); padding: 10px 16px;
+      border-radius: 8px; font-weight: 600; font-size: 13px; z-index: 200;
+      opacity: 0; transform: translateY(10px); pointer-events: none; transition: 0.2s;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    .empty-box {
+      text-align: center; padding: 60px 20px; background: var(--surface);
+      border: 1px dashed var(--border); border-radius: var(--radius); color: var(--muted);
+    }
+
+    @media (max-width: 680px) {
+      .navbar { padding: 10px 14px; flex-wrap: wrap; }
+      .brand-sub { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="brand" id="btnHome">
+      <div class="brand-logo">KĐ</div>
+      <div>
+        <div class="brand-title">KHO ĐỒ ÁN</div>
+        <div class="brand-sub" id="connStatus">● Đang kết nối Cloud...</div>
+      </div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-view="feed">🏛️ Bảng Tin</button>
+      <button class="nav-tab" data-view="saved">🔖 Đã Lưu</button>
+      <button class="nav-tab" data-view="drive">⚡ Lấy Ảnh Nét Drive</button>
+    </div>
+
+    <div class="nav-right">
+      <div class="profile-pill" id="btnProfile" title="Đổi tên hiển thị & lớp">
+        <span class="avatar-dot" id="navAvatar" style="background:#d99b43;">SV</span>
+        <span id="navUserName">Kiến trúc sư</span>
+      </div>
+      <button class="btn-primary" id="btnOpenPost">+ Đăng Đồ Án</button>
+    </div>
+  </header>
+
+  <main class="container" id="appMain"></main>
+
+  <!-- Modal Đăng Đồ Án -->
+  <div class="modal-backdrop" id="postModal">
+    <div class="modal">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2>Đăng Đồ Án Mới (Giữ Nguyên 100% Gốc)</h2>
+        <button class="btn" id="btnClosePost">✕</button>
+      </div>
+      <div class="field">
+        <label>Tên đồ án *</label>
+        <input type="text" class="text-input" id="inTitle" placeholder="VD: Bảo tàng Lịch sử Chữ Quốc Ngữ - Đồ án K8" />
+      </div>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+        <div class="field">
+          <label>Thể loại</label>
+          <select class="select-input" id="inCat">
+            <option>Đồ án Tốt nghiệp</option>
+            <option>Công cộng</option>
+            <option>Bảo tàng</option>
+            <option>Công nghiệp</option>
+            <option>Nhà ở & Chung cư</option>
+            <option>Quy hoạch</option>
+            <option>Nội thất</option>
+            <option>Thi tuyển</option>
+            <option>Khác</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Điểm số / Giải thưởng / Năm</label>
+          <input type="text" class="text-input" id="inBadge" placeholder="VD: 9.2đ • HK1 2026" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Mô tả ý tưởng / Ghi chú</label>
+        <textarea class="textarea-input" id="inDesc" rows="2" placeholder="Giới thiệu ngắn về khu đất, giải pháp mặt bằng, kết cấu..."></textarea>
+      </div>
+      <div class="field">
+        <label>Bản vẽ Ảnh (PNG/JPG/WEBP) & Tài liệu PDF gốc *</label>
+        <div class="dropzone" id="postDropzone">
+          <b>+ Kéo thả nhiều file Ảnh hoặc PDF vào đây (hoặc bấm để chọn)</b>
+          <div style="font-size:12px; color:var(--muted); margin-top:4px;">Không nén, không giảm độ phân giải • Tối đa 25MB/file để đồng bộ Cloud ổn định</div>
+          <input type="file" id="inFiles" accept="image/*,application/pdf" multiple style="display:none;" />
+        </div>
+      </div>
+      <div class="pending-list" id="pendingList"></div>
+      <div class="progress-wrap" id="uploadProgressBox" style="display:none;">
+        <div style="display:flex; justify-content:space-between; font-size:12px;">
+          <span id="uploadStatusText">Đang tải lên Cloud...</span>
+          <span id="uploadPctText">0%</span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="uploadFill"></div></div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn" id="btnCancelPost">Hủy</button>
+        <button class="btn-primary" id="btnSubmitPost">🚀 Đăng Lên Bảng Tin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Hồ Sơ Cá Nhân -->
+  <div class="modal-backdrop" id="profileModal">
+    <div class="modal" style="max-width:420px;">
+      <h2>Hồ Sơ Người Đăng</h2>
+      <div class="field">
+        <label>Tên hiển thị của bạn *</label>
+        <input type="text" class="text-input" id="profName" placeholder="VD: Đào Anh Tuấn" />
+      </div>
+      <div class="field">
+        <label>Lớp / Khóa / Trường</label>
+        <input type="text" class="text-input" id="profClass" placeholder="VD: KT23 • ĐH Kiến Trúc" />
+      </div>
+      <div class="field">
+        <label>Màu Avatar</label>
+        <input type="color" id="profColor" value="#d99b43" style="height:38px; width:80px; background:none; border:none; cursor:pointer;" />
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn" id="btnCloseProf">Hủy</button>
+        <button class="btn-primary" id="btnSaveProf">Lưu Hồ Sơ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox Deep Zoom Ảnh -->
+  <div class="overlay-viewer" id="imgLightbox">
+    <div class="ov-bar">
+      <div style="font-weight:700; font-size:13px;" id="lbTitle"></div>
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button class="btn" id="lbZoomOut">−</button>
+        <span id="lbZoomPct" style="font-family:var(--mono); font-size:12px; min-width:46px; text-align:center;">100%</span>
+        <button class="btn" id="lbZoomIn">+</button>
+        <button class="btn" id="lbFit">Vừa khung</button>
+        <button class="btn" id="lbOneToOne">1:1 Gốc</button>
+        <button class="btn-primary" id="lbDownload">⬇ Tải gốc</button>
+        <button class="btn danger" id="lbClose">✕ Đóng</button>
+      </div>
+    </div>
+    <div class="ov-stage" id="lbStage"><img id="lbImg" alt="Zoom" /></div>
+  </div>
+
+  <!-- Trình Xem PDF Trực Tiếp -->
+  <div class="overlay-viewer" id="pdfViewer">
+    <div class="ov-bar">
+      <div style="font-weight:700; font-size:13px;" id="pdfTitle"></div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" id="pdfNewTab">Mở tab mới ↗</button>
+        <button class="btn-primary" id="pdfDownload">⬇ Tải PDF gốc</button>
+        <button class="btn danger" id="pdfClose">✕ Đóng</button>
+      </div>
+    </div>
+    <div class="ov-stage" style="cursor:default;"><iframe id="pdfFrame"></iframe></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import {
+      getFirestore, collection, doc, setDoc, getDoc, getDocs, addDoc, updateDoc, deleteDoc,
+      onSnapshot, query, orderBy, where, arrayUnion, arrayRemove
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Cấu hình Firebase dự án "kho-do-an" của bạn
+    const firebaseConfig = {
+      apiKey: "AIzaSyD5Zb-JqLGPRpUdUli2Lby-FqomqihAgyU",
+      authDomain: "kho-do-an.firebaseapp.com",
+      projectId: "kho-do-an",
+      storageBucket: "kho-do-an.firebasestorage.app",
+      messagingSenderId: "680083431360",
+      appId: "1:680083431360:web:58e8096c3f80d8f4657225",
+      measurementId: "G-J8S525THGF"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    /* ========================
+       STATE & HELPERS
+       ======================== */
+    const state = {
+      uid: null,
+      profile: { name: 'Kiến trúc sư', className: 'ĐH Kiến Trúc', color: '#d99b43' },
+      view: 'feed', // 'feed' | 'saved' | 'drive'
+      activePostId: null,
+      filterCat: 'Tất cả',
+      filterPdfOnly: false,
+      filterAuthorUid: null,
+      search: '',
+      posts: [],
+      pendingFiles: [],
+      fileCache: new Map(), // fileId -> { blob, url }
+      lbScale: 1, lbX: 0, lbY: 0, lbDrag: false, lbSX: 0, lbSY: 0,
+      activeMedia: null
+    };
+
+    function showToast(msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => el.classList.remove('show'), 2800);
+    }
+    function escapeHtml(s) {
+      return String(s || '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+    function formatBytes(b) {
+      if (!b) return '0 B';
+      const k = 1024, u = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(b) / Math.log(k));
+      return (b / Math.pow(k, i)).toFixed(i >= 2 ? 2 : 0) + ' ' + u[i];
+    }
+    function timeAgo(ts) {
+      if (!ts) return 'Vừa xong';
+      const diff = Math.floor((Date.now() - ts) / 1000);
+      if (diff < 60) return 'Vừa xong';
+      if (diff < 3600) return Math.floor(diff / 60) + ' phút trước';
+      if (diff < 86400) return Math.floor(diff / 3600) + ' giờ trước';
+      return new Date(ts).toLocaleDateString('vi-VN');
+    }
+
+    /* ========================
+       BINARY CHUNKING (100% LOSSLESS)
+       ======================== */
+    const CHUNK_RAW_BYTES = 600 * 1024; // ~600KB binary -> ~800KB base64 (< 1MB Firestore limit)
+
+    function uint8ToBase64(u8) {
+      let bin = '';
+      const step = 0x8000;
+      for (let i = 0; i < u8.length; i += step) {
+        bin += String.fromCharCode.apply(null, u8.subarray(i, i + step));
+      }
+      return btoa(bin);
+    }
+    function base64ToUint8(b64) {
+      const bin = atob(b64);
+      const u8 = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      return u8;
+    }
+
+    async function uploadLosslessFile(file, onProgress) {
+      const fileId = 'f_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      const buf = new Uint8Array(await file.arrayBuffer());
+      const totalChunks = Math.max(1, Math.ceil(buf.length / CHUNK_RAW_BYTES));
+
+      for (let i = 0; i < totalChunks; i++) {
+        const slice = buf.subarray(i * CHUNK_RAW_BYTES, (i + 1) * CHUNK_RAW_BYTES);
+        const b64 = uint8ToBase64(slice);
+        await setDoc(doc(db, 'file_chunks', `${fileId}_${i}`), {
+          fileId,
+          index: i,
+          data: b64
+        });
+        if (onProgress) onProgress((i + 1) / totalChunks);
+      }
+
+      const blob = new Blob([buf], { type: file.type });
+      const url = URL.createObjectURL(blob);
+      state.fileCache.set(fileId, { blob, url });
+      return fileId;
+    }
+
+    async function fetchLosslessFile(meta, onProgress) {
+      if (state.fileCache.has(meta.fileId)) return state.fileCache.get(meta.fileId);
+      const parts = [];
+      for (let i = 0; i < meta.chunkCount; i++) {
+        const snap = await getDoc(doc(db, 'file_chunks', `${meta.fileId}_${i}`));
+        if (!snap.exists()) throw new Error('Thiếu mảnh dữ liệu ' + i);
+        parts.push(base64ToUint8(snap.data().data));
+        if (onProgress) onProgress((i + 1) / meta.chunkCount);
+      }
+      const blob = new Blob(parts, { type: meta.type || 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const entry = { blob, url };
+      state.fileCache.set(meta.fileId, entry);
+      return entry;
+    }
+
+    /* ========================
+       PURE-JS UNCOMPRESSED ZIP (STORE)
+       ======================== */
+    const crcTable = (() => {
+      const t = new Uint32Array(256);
+      for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        t[n] = c >>> 0;
+      }
+      return t;
+    })();
+    function crc32(bytes) {
+      let c = 0xFFFFFFFF;
+      for (let i = 0; i < bytes.length; i++) c = crcTable[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+      return (c ^ 0xFFFFFFFF) >>> 0;
+    }
+    async function buildStoreZip(items) {
+      const enc = new TextEncoder();
+      const localParts = [], centralParts = [];
+      let offset = 0;
+      const used = new Set();
+
+      for (const it of items) {
+        let name = it.name || 'file';
+        let base = name, ext = '';
+        const dot = name.lastIndexOf('.');
+        if (dot > 0) { base = name.slice(0, dot); ext = name.slice(dot); }
+        let idx = 1;
+        while (used.has(name)) name = `${base}_${idx++}${ext}`;
+        used.add(name);
+
+        const nb = enc.encode(name);
+        const data = new Uint8Array(await it.blob.arrayBuffer());
+        const crc = crc32(data);
+        const sz = data.length;
+
+        const lh = new ArrayBuffer(30); const lv = new DataView(lh);
+        lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0x0800, true);
+        lv.setUint16(8, 0, true); lv.setUint32(14, crc, true); lv.setUint32(18, sz, true);
+        lv.setUint32(22, sz, true); lv.setUint16(26, nb.length, true);
+        localParts.push(new Uint8Array(lh), nb, data);
+
+        const ch = new ArrayBuffer(46); const cv = new DataView(ch);
+        cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true);
+        cv.setUint16(8, 0x0800, true); cv.setUint16(10, 0, true); cv.setUint32(16, crc, true);
+        cv.setUint32(20, sz, true); cv.setUint32(24, sz, true); cv.setUint16(28, nb.length, true);
+        cv.setUint32(42, offset, true);
+        centralParts.push(new Uint8Array(ch), nb);
+
+        offset += 30 + nb.length + sz;
+      }
+
+      const cdSize = centralParts.reduce((s, p) => s + p.length, 0);
+      const eocd = new ArrayBuffer(22); const ev = new DataView(eocd);
+      ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, items.length, true);
+      ev.setUint16(10, items.length, true); ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true);
+      return new Blob([...localParts, ...centralParts, new Uint8Array(eocd)], { type: 'application/zip' });
+    }
+
+    /* ========================
+       AUTH & PROFILE SYNC
+       ======================== */
+    function updateProfileUI() {
+      const p = state.profile;
+      document.getElementById('navUserName').textContent = p.name || 'Kiến trúc sư';
+      const av = document.getElementById('navAvatar');
+      av.style.background = p.color || '#d99b43';
+      av.textContent = (p.name || 'SV').trim().slice(0, 2).toUpperCase();
+    }
+
+    async function loadUserProfile(uid) {
+      const savedLocal = localStorage.getItem('kda_profile');
+      if (savedLocal) {
+        try { state.profile = { ...state.profile, ...JSON.parse(savedLocal) }; } catch(e) {}
+      }
+      try {
+        const snap = await getDoc(doc(db, 'profiles', uid));
+        if (snap.exists()) state.profile = { ...state.profile, ...snap.data() };
+      } catch(e) {}
+      updateProfileUI();
+    }
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) return;
+      state.uid = user.uid;
+      document.getElementById('connStatus').textContent = '● Online • Đồng bộ trực tiếp';
+      await loadUserProfile(user.uid);
+      subscribePosts();
+    });
+
+    signInAnonymously(auth).catch(err => {
+      document.getElementById('connStatus').textContent = '● Lỗi kết nối Firebase';
+      document.getElementById('connStatus').style.color = '#e05d5d';
+      console.error(err);
+      showToast('Chưa bật Anonymous Auth hoặc Firestore trên Firebase!');
+    });
+
+    function subscribePosts() {
+      const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+      onSnapshot(q, snap => {
+        state.posts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderApp();
+      }, err => {
+        console.error(err);
+        showToast('Lỗi tải bảng tin: Kiểm tra Firestore Rules (Test mode).');
+      });
+    }
+
+    /* ========================
+       RENDERING
+       ======================== */
+    const CATEGORIES = ['Tất cả', 'Đồ án Tốt nghiệp', 'Công cộng', 'Bảo tàng', 'Công nghiệp', 'Nhà ở & Chung cư', 'Quy hoạch', 'Nội thất', 'Thi tuyển', 'Khác'];
+
+    function renderApp() {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.view === state.view && !state.activePostId));
+      const main = document.getElementById('appMain');
+
+      if (state.view === 'drive') {
+        renderDriveToolkit(main);
+        return;
+      }
+
+      if (state.activePostId) {
+        const post = state.posts.find(p => p.id === state.activePostId);
+        if (!post) { state.activePostId = null; return renderApp(); }
+        renderPostDetail(main, post);
+        return;
+      }
+
+      renderFeed(main);
+    }
+
+    function renderFeed(container) {
+      const q = state.search.trim().toLowerCase();
+      const filtered = state.posts.filter(p => {
+        if (state.view === 'saved' && !(p.saves || []).includes(state.uid)) return false;
+        if (state.filterAuthorUid && p.authorUid !== state.filterAuthorUid) return false;
+        if (state.filterCat !== 'Tất cả' && p.category !== state.filterCat) return false;
+        if (state.filterPdfOnly && !(p.files || []).some(f => f.isPdf)) return false;
+        if (q) {
+          const hay = `${p.title} ${p.desc} ${p.authorName} ${p.category}`.toLowerCase();
+          if (!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      container.innerHTML = `
+        <div class="filter-bar">
+          <div class="cat-chips">
+            ${CATEGORIES.map(c => `<button class="chip ${state.filterCat === c ? 'active' : ''}" data-cat="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('')}
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button class="btn ${state.filterPdfOnly ? 'active' : ''}" id="btnFilterPdf">📄 Chỉ có PDF</button>
+            ${state.filterAuthorUid ? `<button class="btn danger" id="btnClearAuthor">✕ Bỏ lọc tác giả</button>` : ''}
+            <input type="text" class="text-input" id="searchBox" style="width:220px;" placeholder="Tìm đồ án, tác giả..." value="${escapeHtml(state.search)}" />
+          </div>
+        </div>
+        ${filtered.length ? `<div class="feed-grid" id="feedGrid"></div>` : `
+          <div class="empty-box">
+            <h3 style="color:var(--text); margin-bottom:6px;">${state.view === 'saved' ? 'Bạn chưa lưu đồ án nào' : 'Chưa có đồ án nào phù hợp'}</h3>
+            <p style="margin-bottom:14px;">Hãy là người đầu tiên chia sẻ bản vẽ hoặc PDF gốc 100% lên cộng đồng!</p>
+            <button class="btn-primary" onclick="document.getElementById('btnOpenPost').click()">+ Đăng Đồ Án Ngay</button>
+          </div>
+        `}
+      `;
+
+      container.querySelectorAll('[data-cat]').forEach(b => {
+        b.onclick = () => { state.filterCat = b.dataset.cat; renderApp(); };
+      });
+      document.getElementById('btnFilterPdf').onclick = () => { state.filterPdfOnly = !state.filterPdfOnly; renderApp(); };
+      if (document.getElementById('btnClearAuthor')) {
+        document.getElementById('btnClearAuthor').onclick = () => { state.filterAuthorUid = null; renderApp(); };
+      }
+      document.getElementById('searchBox').oninput = e => { state.search = e.target.value; renderApp(); };
+
+      const grid = document.getElementById('feedGrid');
+      if (!grid) return;
+
+      grid.innerHTML = filtered.map(p => {
+        const files = p.files || [];
+        const imgCount = files.filter(f => !f.isPdf).length;
+        const pdfCount = files.filter(f => f.isPdf).length;
+        const liked = (p.likes || []).includes(state.uid);
+        const saved = (p.saves || []).includes(state.uid);
+        const totalSize = files.reduce((s, f) => s + (f.size || 0), 0);
+
+        return `
+          <article class="post-card">
+            <div class="post-header">
+              <div class="author-box" data-author="${escapeHtml(p.authorUid)}">
+                <div class="author-avatar" style="background:${escapeHtml(p.authorColor || '#d99b43')};">${escapeHtml((p.authorName || 'SV').slice(0,2).toUpperCase())}</div>
+                <div class="author-meta">
+                  <div class="author-name">${escapeHtml(p.authorName || 'Kiến trúc sư')}</div>
+                  <div class="author-sub">${escapeHtml(p.authorClass || '')} • ${timeAgo(p.createdAt)}</div>
+                </div>
+              </div>
+              <span class="tag-pill">${escapeHtml(p.category)}</span>
+            </div>
+
+            <div class="post-cover" data-open="${p.id}" id="cover_${p.id}">
+              ${p.coverThumb
+                ? `<img src="${p.coverThumb}" loading="lazy" alt="${escapeHtml(p.title)}" />`
+                : `<div class="pdf-cover-box"><div class="pdf-badge-lg">📄 HỒ SƠ PDF GỐC</div><div style="font-size:12px; color:var(--muted);">${pdfCount} tài liệu PDF nguyên bản</div></div>`
+              }
+              <div class="cover-tags">
+                <span class="tag-pill">${imgCount ? `🖼️ ${imgCount} ảnh` : ''}${imgCount && pdfCount ? ' • ' : ''}${pdfCount ? `📄 ${pdfCount} PDF` : ''}</span>
+                <span class="tag-pill">${formatBytes(totalSize)}</span>
+              </div>
+            </div>
+
+            <div class="post-body">
+              <div class="post-title" data-open="${p.id}">${escapeHtml(p.title)}</div>
+              ${p.badge ? `<div style="font-size:12px; color:var(--accent); font-weight:700;">🏆 ${escapeHtml(p.badge)}</div>` : ''}
+              ${p.desc ? `<div class="post-desc">${escapeHtml(p.desc)}</div>` : ''}
+            </div>
+
+            <div class="post-footer">
+              <div class="social-actions">
+                <button class="btn like-btn ${liked ? 'liked' : ''}" data-like="${p.id}">❤️ ${(p.likes || []).length}</button>
+                <button class="btn" data-open="${p.id}">💬 ${(p.comments || []).length}</button>
+                <button class="btn ${saved ? 'active' : ''}" data-save="${p.id}">${saved ? '🔖 Đã lưu' : '🔖 Lưu'}</button>
+              </div>
+              <button class="btn-primary" style="padding:6px 11px; font-size:12px;" data-open="${p.id}">Xem gốc →</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      grid.querySelectorAll('[data-open]').forEach(el => {
+        el.onclick = () => { state.activePostId = el.dataset.open; renderApp(); window.scrollTo(0, 0); };
+      });
+      grid.querySelectorAll('[data-author]').forEach(el => {
+        el.onclick = () => { state.filterAuthorUid = el.dataset.author; renderApp(); };
+      });
+      grid.querySelectorAll('[data-like]').forEach(el => {
+        el.onclick = () => toggleLike(el.dataset.like);
+      });
+      grid.querySelectorAll('[data-save]').forEach(el => {
+        el.onclick = () => toggleSave(el.dataset.save);
+      });
+    }
+
+    async function toggleLike(postId) {
+      if (!state.uid) return;
+      const p = state.posts.find(x => x.id === postId);
+      if (!p) return;
+      const liked = (p.likes || []).includes(state.uid);
+      await updateDoc(doc(db, 'posts', postId), {
+        likes: liked ? arrayRemove(state.uid) : arrayUnion(state.uid)
+      });
+    }
+
+    async function toggleSave(postId) {
+      if (!state.uid) return;
+      const p = state.posts.find(x => x.id === postId);
+      if (!p) return;
+      const saved = (p.saves || []).includes(state.uid);
+      await updateDoc(doc(db, 'posts', postId), {
+        saves: saved ? arrayRemove(state.uid) : arrayUnion(state.uid)
+      });
+      showToast(saved ? 'Đã bỏ lưu đồ án' : 'Đã lưu vào danh sách của bạn!');
+    }
+
+    /* ========================
+       POST DETAIL VIEW
+       ======================== */
+    function renderPostDetail(container, post) {
+      const files = post.files || [];
+      const liked = (post.likes || []).includes(state.uid);
+      const saved = (post.saves || []).includes(state.uid);
+      const isOwner = post.authorUid === state.uid;
+
+      container.innerHTML = `
+        <div style="margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <button class="btn" id="btnBackFeed">← Quay lại Bảng Tin</button>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn like-btn ${liked ? 'liked' : ''}" id="detLike">❤️ Thích (${(post.likes || []).length})</button>
+            <button class="btn ${saved ? 'active' : ''}" id="detSave">${saved ? '🔖 Đã lưu' : '🔖 Lưu bài'}</button>
+            <button class="btn-primary" id="detZip">📦 Tải trọn bộ ZIP gốc (${files.length} file)</button>
+            ${isOwner ? `<button class="btn danger" id="detDelete">🗑️ Xóa bài</button>` : ''}
+          </div>
+        </div>
+
+        <div class="detail-box">
+          <div class="detail-head">
+            <div>
+              <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                <span class="tag-pill" style="background:var(--accent); color:#111; font-weight:800;">${escapeHtml(post.category)}</span>
+                ${post.badge ? `<span class="tag-pill" style="color:var(--accent);">🏆 ${escapeHtml(post.badge)}</span>` : ''}
+                <span style="font-size:12px; color:var(--muted);">${timeAgo(post.createdAt)}</span>
+              </div>
+              <h1 style="font-size:21px; margin-bottom:6px;">${escapeHtml(post.title)}</h1>
+              <div style="font-size:13px; color:var(--muted);">
+                Đăng bởi <b style="color:var(--text);">${escapeHtml(post.authorName)}</b> (${escapeHtml(post.authorClass || 'Kiến trúc')}) • Tổng dung lượng gốc: <b>${formatBytes(files.reduce((s,f)=>s+(f.size||0),0))}</b>
+              </div>
+            </div>
+          </div>
+
+          ${post.desc ? `<p style="background:var(--bg); padding:12px 14px; border-radius:8px; border:1px solid var(--border); color:#d8dde4;">${escapeHtml(post.desc)}</p>` : ''}
+
+          <div class="sheets-grid" id="detailSheets">
+            ${files.map((f, idx) => `
+              <div class="sheet-card">
+                <div class="sheet-thumb" data-view-file="${idx}" id="thumb_${f.fileId}">
+                  ${f.isPdf
+                    ? `<div class="pdf-cover-box"><div class="pdf-badge-lg">📄 PDF GỐC 100%</div><div style="font-size:12px; color:var(--muted);">Bấm để đọc trực tiếp</div></div>`
+                    : `<div style="color:var(--muted); font-family:var(--mono); font-size:12px;">⏳ Đang tải bản xem trước gốc...</div>`
+                  }
+                </div>
+                <div class="sheet-meta">
+                  <div style="font-weight:700; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</div>
+                  <div style="display:flex; justify-content:space-between; font-family:var(--mono); font-size:11.5px; color:var(--muted);">
+                    <span>${formatBytes(f.size)}</span>
+                    <span>${f.isPdf ? 'PDF DOCUMENT' : `${f.width || '?'} × ${f.height || '?'} px`}</span>
+                  </div>
+                  <div style="display:flex; gap:6px; margin-top:4px;">
+                    <button class="btn" style="flex:1; justify-content:center;" data-view-file="${idx}">${f.isPdf ? '👁️ Xem PDF' : '🔍 Soi nét 1000%'}</button>
+                    <button class="btn-primary" style="flex:1; justify-content:center; padding:7px;" data-dl-file="${idx}">⬇ Tải gốc</button>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Comments -->
+          <div class="comments-section">
+            <h3 style="font-size:15px; margin-bottom:12px;">💬 Bình luận & Nhận xét đồ án (${(post.comments || []).length})</h3>
+            <div style="display:flex; gap:8px; margin-bottom:14px;">
+              <input type="text" class="text-input" id="commentInput" placeholder="Viết góp ý về mặt bằng, hình khối, diễn họa..." />
+              <button class="btn-primary" id="btnSendComment">Gửi</button>
+            </div>
+            <div id="commentList">
+              ${(post.comments || []).map(c => `
+                <div class="comment-item">
+                  <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+                    <b style="color:var(--accent);">${escapeHtml(c.authorName)}</b>
+                    <span style="color:var(--muted);">${timeAgo(c.createdAt)}</span>
+                  </div>
+                  <div style="font-size:13.5px;">${escapeHtml(c.text)}</div>
+                </div>
+              `).join('') || `<div style="color:var(--muted); font-size:13px;">Chưa có bình luận nào.</div>`}
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('btnBackFeed').onclick = () => { state.activePostId = null; renderApp(); };
+      document.getElementById('detLike').onclick = () => toggleLike(post.id);
+      document.getElementById('detSave').onclick = () => toggleSave(post.id);
+
+      if (document.getElementById('detDelete')) {
+        document.getElementById('detDelete').onclick = async () => {
+          if (!confirm('Xóa vĩnh viễn bài đăng đồ án này?')) return;
+          for (const f of files) {
+            for (let i = 0; i < (f.chunkCount || 1); i++) {
+              deleteDoc(doc(db, 'file_chunks', `${f.fileId}_${i}`)).catch(() => {});
+            }
+          }
+          await deleteDoc(doc(db, 'posts', post.id));
+          state.activePostId = null;
+          showToast('Đã xóa đồ án.');
+          renderApp();
+        };
+      }
+
+      // Nạp ảnh gốc tự động cho các thẻ ảnh
+      files.forEach(async f => {
+        if (f.isPdf) return;
+        try {
+          const entry = await fetchLosslessFile(f);
+          const box = document.getElementById(`thumb_${f.fileId}`);
+          if (box) box.innerHTML = `<img src="${entry.url}" alt="${escapeHtml(f.name)}" />`;
+        } catch(e) {
+          const box = document.getElementById(`thumb_${f.fileId}`);
+          if (box) box.innerHTML = `<div style="color:var(--danger); font-size:12px;">Lỗi tải ảnh gốc</div>`;
+        }
+      });
+
+      container.querySelectorAll('[data-view-file]').forEach(el => {
+        el.onclick = () => openMediaViewer(files[Number(el.dataset.viewFile)]);
+      });
+      container.querySelectorAll('[data-dl-file]').forEach(el => {
+        el.onclick = () => downloadSingleFile(files[Number(el.dataset.dlFile)]);
+      });
+
+      document.getElementById('detZip').onclick = async () => {
+        if (!files.length) return;
+        showToast(`Đang tải ${files.length} file gốc từ Cloud để đóng gói ZIP...`);
+        const resolved = [];
+        for (let i = 0; i < files.length; i++) {
+          const entry = await fetchLosslessFile(files[i]);
+          resolved.push({ name: files[i].name, blob: entry.blob });
+        }
+        const zipBlob = await buildStoreZip(resolved);
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(zipBlob);
+        a.download = `${post.title.replace(/[\\/:*?"<>|]/g, '_')}_GOC.zip`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        showToast('Đã tải file ZIP giữ nguyên 100% chất lượng!');
+      };
+
+      const sendComment = async () => {
+        const inp = document.getElementById('commentInput');
+        const txt = inp.value.trim();
+        if (!txt) return;
+        inp.value = '';
+        await updateDoc(doc(db, 'posts', post.id), {
+          comments: arrayUnion({
+            authorUid: state.uid,
+            authorName: state.profile.name || 'Kiến trúc sư',
+            text: txt,
+            createdAt: Date.now()
+          })
+        });
+      };
+      document.getElementById('btnSendComment').onclick = sendComment;
+      document.getElementById('commentInput').onkeydown = e => { if (e.key === 'Enter') sendComment(); };
+    }
+
+    async function downloadSingleFile(meta) {
+      showToast('Đang tải file gốc 100%...');
+      const entry = await fetchLosslessFile(meta);
+      const a = document.createElement('a');
+      a.href = entry.url;
+      a.download = meta.name;
+      a.click();
+      showToast('Đã tải xong: ' + meta.name);
+    }
+
+    /* ========================
+       MEDIA VIEWERS (DEEP ZOOM & PDF)
+       ======================== */
+    const imgLb = document.getElementById('imgLightbox');
+    const lbImg = document.getElementById('lbImg');
+    const lbStage = document.getElementById('lbStage');
+    const pdfViewer = document.getElementById('pdfViewer');
+    const pdfFrame = document.getElementById('pdfFrame');
+
+    function applyLbTransform() {
+      lbImg.style.transform = `translate(${state.lbX}px, ${state.lbY}px) scale(${state.lbScale})`;
+      document.getElementById('lbZoomPct').textContent = Math.round(state.lbScale * 100) + '%';
+    }
+    function fitLb() {
+      const m = state.activeMedia;
+      if (!m || !m.width) { state.lbScale = 1; state.lbX = 0; state.lbY = 0; return applyLbTransform(); }
+      state.lbScale = Math.min(1, (lbStage.clientWidth - 40) / m.width, (lbStage.clientHeight - 40) / m.height);
+      state.lbX = 0; state.lbY = 0;
+      applyLbTransform();
+    }
+
+    async function openMediaViewer(meta) {
+      showToast('Đang mở bản gốc...');
+      const entry = await fetchLosslessFile(meta);
+      state.activeMedia = { meta, entry };
+
+      if (meta.isPdf) {
+        document.getElementById('pdfTitle').textContent = `${meta.name} (${formatBytes(meta.size)})`;
+        pdfFrame.src = entry.url;
+        pdfViewer.classList.add('open');
+        return;
+      }
+
+      document.getElementById('lbTitle').textContent = `${meta.name} • ${meta.width}×${meta.height}px • ${formatBytes(meta.size)}`;
+      lbImg.src = entry.url;
+      imgLb.classList.add('open');
+      requestAnimationFrame(fitLb);
+    }
+
+    document.getElementById('lbClose').onclick = () => imgLb.classList.remove('open');
+    document.getElementById('lbFit').onclick = fitLb;
+    document.getElementById('lbOneToOne').onclick = () => { state.lbScale = 1; state.lbX = 0; state.lbY = 0; applyLbTransform(); };
+    document.getElementById('lbZoomIn').onclick = () => { state.lbScale = Math.min(10, state.lbScale * 1.25); applyLbTransform(); };
+    document.getElementById('lbZoomOut').onclick = () => { state.lbScale = Math.max(0.1, state.lbScale / 1.25); applyLbTransform(); };
+    document.getElementById('lbDownload').onclick = () => { if (state.activeMedia) downloadSingleFile(state.activeMedia.meta); };
+
+    lbStage.addEventListener('wheel', e => {
+      e.preventDefault();
+      state.lbScale = Math.min(10, Math.max(0.1, state.lbScale * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+      applyLbTransform();
+    }, { passive: false });
+    lbStage.addEventListener('mousedown', e => { state.lbDrag = true; state.lbSX = e.clientX - state.lbX; state.lbSY = e.clientY - state.lbY; });
+    window.addEventListener('mousemove', e => { if (state.lbDrag) { state.lbX = e.clientX - state.lbSX; state.lbY = e.clientY - state.lbSY; applyLbTransform(); } });
+    window.addEventListener('mouseup', () => { state.lbDrag = false; });
+
+    document.getElementById('pdfClose').onclick = () => { pdfViewer.classList.remove('open'); pdfFrame.src = ''; };
+    document.getElementById('pdfNewTab').onclick = () => { if (state.activeMedia) window.open(state.activeMedia.entry.url, '_blank'); };
+    document.getElementById('pdfDownload').onclick = () => { if (state.activeMedia) downloadSingleFile(state.activeMedia.meta); };
+
+    /* ========================
+       CREATE POST & FILE PICKER
+       ======================== */
+    const postModal = document.getElementById('postModal');
+    const dz = document.getElementById('postDropzone');
+    const inFiles = document.getElementById('inFiles');
+
+    function renderPendingFiles() {
+      const box = document.getElementById('pendingList');
+      box.innerHTML = state.pendingFiles.map((f, i) => {
+        const isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+        return `
+          <div class="pending-item">
+            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+              <span class="tag-pill" style="background:${isPdf ? 'var(--pdf)' : 'var(--accent)'}; color:#111; font-weight:800;">${isPdf ? 'PDF' : 'ẢNH'}</span>
+              <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(f.name)}</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+              <span style="font-family:var(--mono); font-size:11px; color:var(--muted);">${formatBytes(f.size)}</span>
+              <button class="btn danger" style="padding:2px 7px;" data-rm="${i}">✕</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      box.querySelectorAll('[data-rm]').forEach(b => {
+        b.onclick = () => { state.pendingFiles.splice(Number(b.dataset.rm), 1); renderPendingFiles(); };
+      });
+    }
+
+    function addFilesToPending(fileList) {
+      for (const f of fileList) {
+        const isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+        const isImg = f.type.startsWith('image/');
+        if (!isPdf && !isImg) continue;
+        if (f.size > 25 * 1024 * 1024) {
+          showToast(`Bỏ qua "${f.name}" vì vượt quá 25MB!`);
+          continue;
+        }
+        state.pendingFiles.push(f);
+      }
+      renderPendingFiles();
+    }
+
+    dz.onclick = () => inFiles.click();
+    inFiles.onchange = e => addFilesToPending(e.target.files);
+    dz.ondragover = e => { e.preventDefault(); dz.classList.add('dragover'); };
+    dz.ondragleave = () => dz.classList.remove('dragover');
+    dz.ondrop = e => { e.preventDefault(); dz.classList.remove('dragover'); addFilesToPending(e.dataTransfer.files); };
+
+    function analyzeImageAndThumb(file) {
+      return new Promise(resolve => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          const w = img.naturalWidth, h = img.naturalHeight;
+          const maxW = 640;
+          const scale = Math.min(1, maxW / w);
+          const cw = Math.max(1, Math.round(w * scale));
+          const ch = Math.max(1, Math.round(h * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = cw; canvas.height = ch;
+          canvas.getContext('2d').drawImage(img, 0, 0, cw, ch);
+          const coverThumb = canvas.toDataURL('image/jpeg', 0.78);
+          URL.revokeObjectURL(url);
+          resolve({ width: w, height: h, coverThumb });
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); resolve({ width: 0, height: 0, coverThumb: null }); };
+        img.src = url;
+      });
+    }
+
+    document.getElementById('btnOpenPost').onclick = () => {
+      state.pendingFiles = [];
+      renderPendingFiles();
+      document.getElementById('uploadProgressBox').style.display = 'none';
+      postModal.classList.add('open');
+    };
+    document.getElementById('btnClosePost').onclick = () => postModal.classList.remove('open');
+    document.getElementById('btnCancelPost').onclick = () => postModal.classList.remove('open');
+
+    document.getElementById('btnSubmitPost').onclick = async () => {
+      const title = document.getElementById('inTitle').value.trim();
+      if (!title) return showToast('Vui lòng nhập tên đồ án!');
+      if (!state.pendingFiles.length) return showToast('Vui lòng chọn ít nhất 1 ảnh hoặc file PDF!');
+
+      const btn = document.getElementById('btnSubmitPost');
+      const progBox = document.getElementById('uploadProgressBox');
+      const fill = document.getElementById('uploadFill');
+      const statusTxt = document.getElementById('uploadStatusText');
+      const pctTxt = document.getElementById('uploadPctText');
+
+      btn.disabled = true;
+      progBox.style.display = 'block';
+
+      try {
+        const uploadedMeta = [];
+        let coverThumb = null;
+        const totalFiles = state.pendingFiles.length;
+
+        for (let i = 0; i < totalFiles; i++) {
+          const f = state.pendingFiles[i];
+          const isPdf = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+          let width = 0, height = 0;
+
+          if (!isPdf) {
+            const info = await analyzeImageAndThumb(f);
+            width = info.width; height = info.height;
+            if (!coverThumb && info.coverThumb) coverThumb = info.coverThumb;
+          }
+
+          const fileId = await uploadLosslessFile(f, p => {
+            const overall = Math.round(((i + p) / totalFiles) * 100);
+            fill.style.width = overall + '%';
+            pctTxt.textContent = overall + '%';
+            statusTxt.textContent = `Đang tải gốc (${i + 1}/${totalFiles}): ${f.name}`;
+          });
+
+          uploadedMeta.push({
+            fileId,
+            name: f.name,
+            type: isPdf ? 'application/pdf' : f.type,
+            size: f.size,
+            isPdf,
+            width,
+            height,
+            chunkCount: Math.max(1, Math.ceil(f.size / CHUNK_RAW_BYTES))
+          });
+        }
+
+        await addDoc(collection(db, 'posts'), {
+          title,
+          category: document.getElementById('inCat').value,
+          badge: document.getElementById('inBadge').value.trim(),
+          desc: document.getElementById('inDesc').value.trim(),
+          authorUid: state.uid,
+          authorName: state.profile.name || 'Kiến trúc sư',
+          authorClass: state.profile.className || 'ĐH Kiến Trúc',
+          authorColor: state.profile.color || '#d99b43',
+          coverThumb,
+          files: uploadedMeta,
+          likes: [],
+          saves: [],
+          comments: [],
+          createdAt: Date.now()
+        });
+
+        document.getElementById('inTitle').value = '';
+        document.getElementById('inBadge').value = '';
+        document.getElementById('inDesc').value = '';
+        state.pendingFiles = [];
+        postModal.classList.remove('open');
+        state.view = 'feed';
+        state.activePostId = null;
+        showToast('🎉 Đã đăng đồ án lên Bảng Tin (100% chất lượng gốc)!');
+      } catch (err) {
+        console.error(err);
+        showToast('Lỗi khi đăng bài: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
+    /* ========================
+       PROFILE MODAL
+       ======================== */
+    const profModal = document.getElementById('profileModal');
+    document.getElementById('btnProfile').onclick = () => {
+      document.getElementById('profName').value = state.profile.name || '';
+      document.getElementById('profClass').value = state.profile.className || '';
+      document.getElementById('profColor').value = state.profile.color || '#d99b43';
+      profModal.classList.add('open');
+    };
+    document.getElementById('btnCloseProf').onclick = () => profModal.classList.remove('open');
+    document.getElementById('btnSaveProf').onclick = async () => {
+      const name = document.getElementById('profName').value.trim() || 'Kiến trúc sư';
+      const className = document.getElementById('profClass').value.trim() || 'ĐH Kiến Trúc';
+      const color = document.getElementById('profColor').value;
+      state.profile = { name, className, color };
+      localStorage.setItem('kda_profile', JSON.stringify(state.profile));
+      updateProfileUI();
+      if (state.uid) {
+        await setDoc(doc(db, 'profiles', state.uid), state.profile, { merge: true }).catch(() => {});
+      }
+      profModal.classList.remove('open');
+      showToast('Đã cập nhật hồ sơ hiển thị!');
+    };
+
+    /* ========================
+       DRIVE TOOLKIT TAB
+       ======================== */
+    const DRIVE_SCRIPT = `(() => {
+  if (document.getElementById('kda-panel')) return;
+  const set = new Set();
+  const panel = document.createElement('div');
+  panel.id = 'kda-panel';
+  panel.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:999999;background:#181b20;color:#fff;border:2px solid #d99b43;border-radius:10px;padding:14px;font-family:sans-serif;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.6);min-width:240px;';
+  panel.innerHTML = '<div style="font-weight:800;color:#d99b43;margin-bottom:6px;">⚡ KHO ĐỒ ÁN — GOM ẢNH NÉT</div><div id="kda-cnt" style="margin-bottom:10px;">Đã gom: <b>0</b> tấm (hãy cuộn/lướt qua các trang)</div><div style="display:flex;gap:8px;"><button id="kda-dl" style="flex:1;background:#d99b43;color:#111;border:none;padding:8px;border-radius:6px;font-weight:700;cursor:pointer;">⬇ Tải hết (HD)</button><button id="kda-x" style="background:#333;color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer;">✕</button></div>';
+  document.body.appendChild(panel);
+  const timer = setInterval(() => {
+    document.querySelectorAll('img').forEach(img => {
+      if (img.naturalWidth > 300 && (img.src.includes('drive-viewer') || img.src.startsWith('blob:'))) {
+        if (!set.has(img.src)) { set.add(img.src); document.getElementById('kda-cnt').innerHTML = 'Đã gom: <b>' + set.size + '</b> tấm'; }
+      }
+    });
+  }, 500);
+  document.getElementById('kda-x').onclick = () => { clearInterval(timer); panel.remove(); };
+  document.getElementById('kda-dl').onclick = async () => {
+    clearInterval(timer);
+    const urls = [...set];
+    if (!urls.length) return alert('Chưa gom được tấm nào! Hãy mở file sang tab Google Drive rồi cuộn qua các trang.');
+    for (let i = 0; i < urls.length; i++) {
+      let raw = urls[i], dlUrl = raw;
+      if (!raw.startsWith('blob:')) {
+        for (const u of [raw.replace(/=[sw]\\d+[^?]*/, '=s10000'), raw.replace(/=[sw]\\d+[^?]*/, '=s4000'), raw]) {
+          try { const r = await fetch(u, { credentials: 'include' }); if (r.ok) { dlUrl = URL.createObjectURL(await r.blob()); break; } } catch(e) {}
+        }
+      }
+      const a = document.createElement('a'); a.href = dlUrl; a.download = 'do_an_' + String(i+1).padStart(2,'0') + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      await new Promise(r => setTimeout(r, 800));
+    }
+    alert('Đã tải xong ' + urls.length + ' bản vẽ!');
+  };
+})();`;
+
+    function renderDriveToolkit(container) {
+      const bmHref = 'javascript:' + encodeURIComponent(DRIVE_SCRIPT.replace(/\n\s*/g, ' '));
+      container.innerHTML = `
+        <div class="tool-grid">
+          <div class="tool-card">
+            <h3>1. Bookmarklet 1-Click Gom & Tải Ảnh Nét Từ Google Drive</h3>
+            <p style="color:var(--muted); font-size:13px;">Kéo thả nút màu vàng bên dưới lên <b>Thanh Dấu Trang (Bookmarks Bar)</b> của Chrome. Khi mở file đồ án ở tab Google Drive, bấm vào nút đó rồi lướt qua các trang để tải bản <code>=s10000</code>.</p>
+            <a class="bookmarklet-btn" href="${bmHref}" onclick="event.preventDefault();">⚡ Gom Ảnh Drive Nét</a>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="font-size:12px; color:var(--muted);">Hoặc dán vào Console (F12):</span>
+              <button class="btn" id="btnCopyDrive">📋 Copy Code</button>
+            </div>
+            <div class="code-box">${escapeHtml(DRIVE_SCRIPT)}</div>
+          </div>
+
+          <div class="tool-card">
+            <h3>2. Sửa Link Ảnh Drive Bị Mờ / Lỗi 404</h3>
+            <p style="color:var(--muted); font-size:13px;">Dán link <code>drive-viewer</code> vào ô dưới để ép kích thước siêu nét rồi mở tải về máy trước khi đăng lên KHO ĐỒ ÁN.</p>
+            <input type="text" class="text-input" id="fixDriveUrl" placeholder="Dán link https://drive.google.com/u/0/drive-viewer/... vào đây" />
+            <div style="display:flex; gap:8px;">
+              <select class="select-input" id="fixDriveRes" style="max-width:170px;">
+                <option value="=s10000">Siêu nét (10000px)</option>
+                <option value="=s6000">Rất nét (6000px)</option>
+                <option value="=s4000">Nét cao (4000px)</option>
+                <option value="=s2500">An toàn (2500px)</option>
+              </select>
+              <button class="btn-primary" id="btnOpenFixed" style="flex:1;">Mở ảnh nét ở tab mới ↗</button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('btnCopyDrive').onclick = () => {
+        navigator.clipboard.writeText(DRIVE_SCRIPT);
+        showToast('Đã copy mã gom ảnh Drive!');
+      };
+      document.getElementById('btnOpenFixed').onclick = () => {
+        const raw = document.getElementById('fixDriveUrl').value.trim();
+        if (!raw) return showToast('Vui lòng dán link ảnh Drive!');
+        const res = document.getElementById('fixDriveRes').value;
+        window.open(raw.replace(/=[sw]\d+[^?]*/, res), '_blank');
+      };
+    }
+
+    /* ========================
+       NAV EVENTS
+       ======================== */
+    document.getElementById('btnHome').onclick = () => { state.view = 'feed'; state.activePostId = null; state.filterAuthorUid = null; renderApp(); };
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+      tab.onclick = () => { state.view = tab.dataset.view; state.activePostId = null; renderApp(); };
+    });
+
+    renderApp();
+  </script>
+</body>
+</html>
